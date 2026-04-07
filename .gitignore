@@ -1,0 +1,20 @@
+# ── Build output ────────────────────────────────────────────
+build/
+
+# ── Kernel ELF (di-copy ke iso/ saat build) ─────────────────
+iso/boot/kernel.elf
+
+# ── Editor & IDE ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── macOS ────────────────────────────────────────────────────
+.DS_Store
+__MACOSX/
+
+# ── Windows ──────────────────────────────────────────────────
+Thumbs.db
+desktop.ini
