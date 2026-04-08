@@ -1,6 +1,9 @@
 # ── Build output ────────────────────────────────────────────
 build/
 
+# ── Golden solutions (jangan di-push ke repo mahasiswa!) ────
+solutions/
+
 # ── Kernel ELF (di-copy ke iso/ saat build) ─────────────────
 iso/boot/kernel.elf
 

@@ -5,15 +5,31 @@ Digunakan pada **Minggu 4: Framework & Threads**.
 
 ---
 
-## Prasyarat
+## Prasyarat & Setup
 
-Semua langkah dilakukan di dalam **Ubuntu (VirtualBox)**. Install dependensi berikut:
+### Opsi A — Ubuntu di VirtualBox (Windows / Intel Mac)
 
 ```bash
 sudo apt update
 sudo apt install -y build-essential gcc-multilib nasm \
                     qemu-system-x86 grub-pc-bin xorriso
 ```
+
+### Opsi B — Docker (Mac M-series / ARM64) ← wajib untuk pengguna M1/M2/M3/M4
+
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), lalu:
+
+```bash
+# Masuk ke environment IF-OS (build otomatis jika belum ada)
+chmod +x run-docker.sh
+./run-docker.sh
+
+# Di dalam container, perintah make sudah bisa digunakan
+make
+make run
+```
+
+> Docker juga bisa digunakan di Windows/Linux sebagai alternatif VirtualBox.
 
 ---
 

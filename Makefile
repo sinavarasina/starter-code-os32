@@ -1,38 +1,47 @@
 # =============================================================
-#  Makefile - Toy OS 32-bit
+#  Makefile - IF-OS 32-bit
 #  Praktikum Sistem Operasi
 #
 #  File ini sudah disiapkan oleh asisten praktikum.
 #  JANGAN diubah.
 #
-#  Perintah yang tersedia:
+#  Perintah:
 #    make        → compile + buat ISO
 #    make run    → jalankan di QEMU
 #    make clean  → hapus hasil build
-#
-#  Prasyarat (jalankan sekali di Ubuntu):
-#    sudo apt install build-essential gcc-multilib nasm \
-#                     qemu-system-x86 grub-pc-bin xorriso
 # =============================================================
 
-ASM      := nasm
-CC       := gcc
-LD       := ld
+ASM := nasm
+
+# ── Deteksi arsitektur host ──────────────────────────────────
+# Di dalam Docker: IFOS_ARCH di-set oleh Dockerfile.
+# Di luar Docker (Ubuntu native): pakai uname -m.
+ARCH := $(shell echo $${IFOS_ARCH:-$(shell uname -m)})
+
+ifeq ($(ARCH),arm64)
+    CC := i686-linux-gnu-gcc
+    LD := i686-linux-gnu-ld
+    CFLAGS := -ffreestanding -fno-stack-protector -nostdlib -nostdinc \
+              -fno-builtin -fno-pic -Wall -Wextra -std=c99 -O0 -Isrc
+else
+    CC := gcc
+    LD := ld
+    CFLAGS := -m32 -ffreestanding -fno-stack-protector -nostdlib -nostdinc \
+              -fno-builtin -fno-pic -Wall -Wextra -std=c99 -O0 -Isrc
+endif
 
 ASMFLAGS := -f elf32
-CFLAGS   := -m32 -ffreestanding -fno-stack-protector -nostdlib -nostdinc \
-            -fno-builtin -fno-pic -Wall -Wextra -std=c99 -O2 -Isrc
 LDFLAGS  := -m elf_i386 -T linker.ld
 
 SRC_DIR   := src
 BUILD_DIR := build
 ISO_DIR   := iso
 
-OBJS := $(BUILD_DIR)/boot.o          \
-        $(BUILD_DIR)/context_switch.o \
-        $(BUILD_DIR)/vga.o            \
-        $(BUILD_DIR)/thread.o         \
-        $(BUILD_DIR)/scheduler.o      \
+OBJS := $(BUILD_DIR)/boot.o     \
+        $(BUILD_DIR)/switch.o   \
+        $(BUILD_DIR)/vga.o      \
+        $(BUILD_DIR)/thread.o   \
+        $(BUILD_DIR)/synch.o    \
         $(BUILD_DIR)/kernel.o
 
 KERNEL := $(BUILD_DIR)/kernel.elf
@@ -51,7 +60,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 $(KERNEL): $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^
 	@echo ""
-	@echo ">>> Kernel berhasil di-link: $@"
+	@echo ">>> Kernel berhasil di-link: $@  [arch=$(ARCH)]"
 	@echo ""
 
 $(ISO): $(KERNEL)
@@ -63,8 +72,13 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 run: $(ISO)
-	@echo ">>> Menjalankan QEMU..."
-	qemu-system-i386 -cdrom $(ISO) -m 32M
+	@echo ">>> Menjalankan QEMU (tekan q untuk keluar)..."
+	qemu-system-i386 -cdrom $(ISO) -m 32M -display curses 2>/dev/null
+
+# Alternatif: jalankan di VNC (connect ke localhost:5900 dengan VNC viewer)
+run-vnc: $(ISO)
+	@echo ">>> Menjalankan QEMU (VNC di port 5900)..."
+	qemu-system-i386 -cdrom $(ISO) -m 32M -vnc :0
 
 clean:
 	rm -rf $(BUILD_DIR)
