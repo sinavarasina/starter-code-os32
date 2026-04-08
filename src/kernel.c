@@ -90,11 +90,13 @@ void kernel_main(uint32_t magic, uint32_t mb_info) {
     vga_set_color(0x08);
     vga_puts("(Jika layar berhenti di sini, implementasi Minggu 4 belum selesai)\n\n");
 
-    /* Serahkan CPU — scheduler mulai berjalan */
-    thread_yield();
+    /* kernel_main menyerahkan CPU secara permanen.
+     * thread_block() = masuk BLOCKED, tidak kembali ke ready queue.
+     * Thread A, B, C akan berjalan terus (round-robin). */
+    thread_block();
 
-    /* Tidak seharusnya sampai di sini */
+    /* Jika sampai di sini: seharusnya tidak terjadi */
     vga_set_color(0x0C);
-    vga_puts("\nERROR: kernel_main() kembali dari thread_yield()!\n");
+    vga_puts("\nERROR: kernel_main() kembali dari thread_block()!\n");
     while (1) __asm__ volatile ("hlt");
 }
