@@ -25,78 +25,81 @@
  * Aktifkan demo dengan mendefinisikan DEMO_WEEK6.
  */
 #include "thread.h"
-#include "vga.h"
 #include "types.h"
+#include "vga.h"
 
 /* ── Demo Minggu 4: Tiga thread kooperatif ─────────────── */
 
 static void func_a(void *aux) {
-    (void)aux;
-    uint32_t tick = 0;
-    while (1) {
-        vga_set_color(0x0A);   /* Bright green */
-        vga_puts("[Thread A] tick ");
-        vga_putint((int32_t)tick++);
-        vga_putchar('\n');
-        thread_yield();
-    }
+  (void)aux;
+  uint32_t tick = 0;
+  while (1) {
+    vga_set_color(0x0A); /* Bright green */
+    vga_puts("[Thread A] tick ");
+    vga_putint((int32_t)tick++);
+    vga_putchar('\n');
+    thread_yield();
+  }
 }
 
 static void func_b(void *aux) {
-    (void)aux;
-    uint32_t tick = 0;
-    while (1) {
-        vga_set_color(0x0B);   /* Bright cyan */
-        vga_puts("[Thread B] tick ");
-        vga_putint((int32_t)tick++);
-        vga_putchar('\n');
-        thread_yield();
-    }
+  (void)aux;
+  uint32_t tick = 0;
+  while (1) {
+    vga_set_color(0x0B); /* Bright cyan */
+    vga_puts("[Thread B] tick ");
+    vga_putint((int32_t)tick++);
+    vga_putchar('\n');
+    thread_yield();
+  }
 }
 
 static void func_c(void *aux) {
-    (void)aux;
-    uint32_t tick = 0;
-    while (1) {
-        vga_set_color(0x0E);   /* Yellow */
-        vga_puts("[Thread C] tick ");
-        vga_putint((int32_t)tick++);
-        vga_putchar('\n');
-        thread_yield();
-    }
+  (void)aux;
+  uint32_t tick = 0;
+  while (1) {
+    vga_set_color(0x0E); /* Yellow */
+    vga_puts("[Thread C] tick ");
+    vga_putint((int32_t)tick++);
+    vga_putchar('\n');
+    thread_yield();
+  }
 }
 
 /* ── Entry point ────────────────────────────────────────── */
 
 void kernel_main(uint32_t magic, uint32_t mb_info) {
-    (void)magic; (void)mb_info;
+  (void)magic;
+  (void)mb_info;
 
-    vga_init();
-    vga_set_color(0x0F);
-    vga_puts("===================================\n");
-    vga_puts("  IF-OS  |  Praktikum Sistem Operasi\n");
-    vga_puts("===================================\n\n");
+  vga_init();
+  vga_set_color(VGA_COLOR_BRIGHT_WHITE);
+  vga_puts("===================================\n");
+  vga_puts("  IF-OS  |  Praktikum Sistem Operasi\n");
+  vga_puts("===================================\n\n");
 
-    vga_set_color(0x07);
-    vga_puts("Inisialisasi sistem thread...\n");
-    thread_init();
+  vga_set_color(VGA_COLOR_WHITE);
+  vga_puts("Inisialisasi sistem thread...\n");
+  thread_init();
 
-    vga_puts("Membuat thread A, B, C...\n");
-    thread_create("Thread-A", PRI_DEFAULT, func_a, NULL);
-    thread_create("Thread-B", PRI_DEFAULT, func_b, NULL);
-    thread_create("Thread-C", PRI_DEFAULT, func_c, NULL);
+  vga_puts("Membuat thread A, B, C...\n");
+  thread_create("Thread-A", PRI_DEFAULT, func_a, NULL);
+  thread_create("Thread-B", PRI_DEFAULT, func_b, NULL);
+  thread_create("Thread-C", PRI_DEFAULT, func_c, NULL);
 
-    vga_puts("Memulai scheduling...\n");
-    vga_set_color(0x08);
-    vga_puts("(Jika layar berhenti di sini, implementasi Minggu 4 belum selesai)\n\n");
+  vga_puts("Memulai scheduling...\n");
+  vga_set_color(VGA_COLOR_DARK_GRAY);
+  vga_puts(
+      "(Jika layar berhenti di sini, implementasi Minggu 4 belum selesai)\n\n");
 
-    /* kernel_main menyerahkan CPU secara permanen.
-     * thread_block() = masuk BLOCKED, tidak kembali ke ready queue.
-     * Thread A, B, C akan berjalan terus (round-robin). */
-    thread_block();
+  /* kernel_main menyerahkan CPU secara permanen.
+   * thread_block() = masuk BLOCKED, tidak kembali ke ready queue.
+   * Thread A, B, C akan berjalan terus (round-robin). */
+  thread_block();
 
-    /* Jika sampai di sini: seharusnya tidak terjadi */
-    vga_set_color(0x0C);
-    vga_puts("\nERROR: kernel_main() kembali dari thread_block()!\n");
-    while (1) __asm__ volatile ("hlt");
+  /* Jika sampai di sini: seharusnya tidak terjadi */
+  vga_set_color(VGA_COLOR_BRIGHT_RED);
+  vga_puts("\nERROR: kernel_main() kembali dari thread_block()!\n");
+  while (1)
+    __asm__ volatile("hlt");
 }
