@@ -28,10 +28,10 @@
 
 /* Status thread selama siklus hidupnya */
 enum thread_status {
-  THREAD_RUNNING, /* Sedang berjalan di CPU */
-  THREAD_READY,   /* Siap jalan, menunggu giliran */
-  THREAD_BLOCKED, /* Menunggu event (sinkronisasi) */
-  THREAD_DYING,   /* Akan segera dihentikan */
+	THREAD_RUNNING, /* Sedang berjalan di CPU */
+	THREAD_READY,	/* Siap jalan, menunggu giliran */
+	THREAD_BLOCKED, /* Menunggu event (sinkronisasi) */
+	THREAD_DYING,	/* Akan segera dihentikan */
 };
 
 /* ================================================================
@@ -45,8 +45,8 @@ enum thread_status {
  *    max_ticks : jumlah tick sebelum thread exit (0 = infinite)
  * ================================================================ */
 struct thread_args {
-  uint8_t color;
-  uint32_t max_ticks;
+	uint8_t color;
+	uint32_t max_ticks;
 };
 
 /*
@@ -71,12 +71,12 @@ struct thread_args {
  *   current = (struct thread *)(esp & ~(PGSIZE - 1))
  */
 struct thread {
-  tid_t tid;                 /* Nomor unik thread */
-  enum thread_status status; /* Status saat ini */
-  char name[16];             /* Nama thread (untuk debug) */
-  uint8_t *stack;            /* Saved ESP (diperbarui saat context switch) */
-  int priority;              /* Prioritas (Minggu 6: priority scheduling) */
-  unsigned magic;            /* Harus == THREAD_MAGIC; deteksi overflow */
+	tid_t tid;		   /* Nomor unik thread */
+	enum thread_status status; /* Status saat ini */
+	char name[16];		   /* Nama thread (untuk debug) */
+	uint8_t *stack; /* Saved ESP (diperbarui saat context switch) */
+	int priority;	/* Prioritas (Minggu 6: priority scheduling) */
+	unsigned magic; /* Harus == THREAD_MAGIC; deteksi overflow */
 };
 
 /* Tipe fungsi yang dijalankan thread */
@@ -149,7 +149,7 @@ void thread_schedule_tail(struct thread *prev);
  * ================================================================
  */
 tid_t thread_create(const char *name, int priority, thread_func *function,
-                    void *aux);
+		    void *aux);
 void thread_yield(void);
 struct thread *next_thread_to_run(void);
 
