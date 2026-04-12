@@ -70,8 +70,8 @@ CMD ["bash", "-c", \
    echo '' && \
    echo 'Perintah:' && \
    echo '  make                                -> compile + buat ISO' && \
-   echo '  make DEMO=-DSYNCHRONIZATION         -> compile + buat ISO' && \
-   echo '  make DEMO=-DPRIORIY_SCHEDULING      -> compile + buat ISO' && \
+   echo '  make DEMO=-DSYNCHRONIZATION         -> compile + buat ISO untuk tugas Sinkronisasi' && \
+   echo '  make DEMO=-DPRIORIY_SCHEDULING      -> compile + buat ISO untuk tugas Priority Scheduling' && \
    echo '  make run                            -> jalankan di QEMU' && \
    echo '  make clean                          -> hapus build' && \
    echo '' && \
