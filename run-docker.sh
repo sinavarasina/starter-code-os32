@@ -10,7 +10,7 @@
 # =============================================================
 
 IMAGE_LOCAL="ifos-env"
-IMAGE_REMOTE="NAMAAKUN/ifos-env:latest"   # ← ganti dengan akun Docker Hub asisten
+IMAGE_REMOTE="sinanonym/ifos-env:latest"
 CONTAINER_NAME="ifos-dev"
 
 # Cek apakah Docker tersedia
