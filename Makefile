@@ -53,7 +53,7 @@ OBJS := $(BUILD_DIR)/boot.o     \
 KERNEL := $(BUILD_DIR)/kernel.elf
 ISO    := $(BUILD_DIR)/os.iso
 
-.PHONY: all run clean
+.PHONY: all run clean format
 
 all: $(ISO)
 
@@ -90,3 +90,8 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(ISO_DIR)/boot/kernel.elf
 	@echo ">>> Build directory dihapus."
+
+format:
+	@echo ">>> Memformat source code..."
+	clang-format -i -style=file src/*.c src/*.h
+	@echo ">>> Selesai!"
