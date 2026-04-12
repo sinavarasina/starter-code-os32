@@ -24,6 +24,7 @@ ARG TARGETARCH
 
 # ── Install package dasar ────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
         make \
         nasm \
         xorriso \
@@ -31,7 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         grub-common \
         qemu-system-x86 \
         qemu-utils \
-        libncurses5 \
+        seabios \
+        libncurses6 \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install cross-compiler sesuai arsitektur host ───────────
@@ -41,6 +43,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
             gcc-i686-linux-gnu \
             binutils-i686-linux-gnu \
+            libc6-dev-i386-cross \
         && rm -rf /var/lib/apt/lists/*; \
     else \
         apt-get update && apt-get install -y --no-install-recommends \
