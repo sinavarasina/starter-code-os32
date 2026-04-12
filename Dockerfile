@@ -24,28 +24,34 @@ ARG TARGETARCH
 
 # ── Install package dasar ────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
         make \
         nasm \
         xorriso \
-        grub-pc-bin \
-        grub-common \
         qemu-system-x86 \
         qemu-utils \
-        libncurses5 \
+        seabios \
+        libncurses6 \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install cross-compiler sesuai arsitektur host ───────────
 #   amd64 : gcc -m32  (butuh gcc-multilib)
 #   arm64 : i686-linux-gnu-gcc  (cross-compiler, tanpa -m32)
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        dpkg --add-architecture amd64 && \
         apt-get update && apt-get install -y --no-install-recommends \
             gcc-i686-linux-gnu \
             binutils-i686-linux-gnu \
+            libc6-dev-i386-cross \
+            grub-pc-bin:amd64 \
+            grub-common:amd64 \
         && rm -rf /var/lib/apt/lists/*; \
     else \
         apt-get update && apt-get install -y --no-install-recommends \
             gcc \
             gcc-multilib \
+            grub-pc-bin \
+            grub-common \
         && rm -rf /var/lib/apt/lists/*; \
     fi
 
