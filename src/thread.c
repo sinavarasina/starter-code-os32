@@ -14,8 +14,8 @@
  * ================================================================
  */
 #include "thread.h"
-#include "vga.h"
 #include "types.h"
+#include "vga.h"
 
 /* Forward declaration */
 static void schedule(void);
@@ -24,39 +24,41 @@ static void schedule(void);
 
 /* Frame paling ATAS stack: argumen untuk kernel_thread() */
 struct kernel_thread_frame {
-    void        *eip;       /* NULL — dummy return address */
-    thread_func *function;  /* Fungsi yang akan dijalankan thread */
-    void        *aux;       /* Argumen fungsi */
+	void *eip;	       /* NULL — dummy return address */
+	thread_func *function; /* Fungsi yang akan dijalankan thread */
+	void *aux;	       /* Argumen fungsi */
 };
 
 /* Frame tengah: return address menuju kernel_thread */
 struct switch_entry_frame {
-    void (*eip)(void);      /* Alamat kernel_thread */
+	void (*eip)(void); /* Alamat kernel_thread */
 };
 
 /* Frame paling BAWAH stack: register callee-saved + return ke switch_entry */
 struct switch_threads_frame {
-    uint32_t   edi;         /* Callee-saved register (nilai dummy = 0) */
-    uint32_t   esi;
-    uint32_t   ebp;
-    uint32_t   ebx;
-    void      (*eip)(void); /* Alamat switch_entry */
-    /* Dua word berikut adalah arg dummy cur & next — dibuang switch_entry */
-    void      *cur_dummy;
-    void      *next_dummy;
+	uint32_t edi; /* Callee-saved register (nilai dummy = 0) */
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t ebx;
+	void (*eip)(void); /* Alamat switch_entry */
+	/* Dua word berikut adalah arg dummy cur & next — dibuang switch_entry
+	 */
+	void *cur_dummy;
+	void *next_dummy;
 };
 
 /* ── Variabel internal ───────────────────────────────────── */
 
 /* Pool halaman 4 KB untuk thread-thread yang dibuat mahasiswa */
-static uint8_t thread_pool[MAX_THREADS][PGSIZE] __attribute__((aligned(PGSIZE)));
+static uint8_t thread_pool[MAX_THREADS][PGSIZE]
+    __attribute__((aligned(PGSIZE)));
 static uint32_t thread_pool_idx = 0;
 
 /* Antrian thread READY (circular array)
  * Diisi oleh thread_unblock(), dikuras oleh next_thread_to_run() */
 static struct thread *ready_queue[MAX_THREADS * 2];
-static uint32_t ready_head  = 0;
-static uint32_t ready_tail  = 0;
+static uint32_t ready_head = 0;
+static uint32_t ready_tail = 0;
 static uint32_t ready_count = 0;
 
 /* Thread pertama (kernel_main) */
@@ -71,49 +73,57 @@ uint32_t thread_stack_ofs = offsetof(struct thread, stack);
 
 /* ── Fungsi internal ─────────────────────────────────────── */
 
-static tid_t allocate_tid(void) {
-    return next_tid_counter++;
-}
+static tid_t allocate_tid(void) { return next_tid_counter++; }
 
 /* Alokasi satu page dari pool untuk thread baru */
-static struct thread *allocate_thread_page(void) {
-    if (thread_pool_idx >= MAX_THREADS) return NULL;
-    return (struct thread *)thread_pool[thread_pool_idx++];
+static struct thread *allocate_thread_page(void)
+{
+	if (thread_pool_idx >= MAX_THREADS)
+		return NULL;
+	return (struct thread *)thread_pool[thread_pool_idx++];
 }
 
 /* Pindahkan stack pointer thread t ke bawah sebesar 'size' byte.
  * Kembalikan pointer ke area yang baru dialokasikan. */
-static void *alloc_frame(struct thread *t, uint32_t size) {
-    t->stack -= size;
-    return (void *)t->stack;
+static void *alloc_frame(struct thread *t, uint32_t size)
+{
+	t->stack -= size;
+	return (void *)t->stack;
 }
 
 /* Periksa apakah t adalah thread yang valid (magic number OK) */
-static int is_thread(struct thread *t) {
-    return t != NULL && t->magic == THREAD_MAGIC;
+static int is_thread(struct thread *t)
+{
+	return t != NULL && t->magic == THREAD_MAGIC;
 }
 
 /* Inisialisasi struct thread dengan nilai awal */
-static void init_thread(struct thread *t, const char *name, int priority) {
-    /* Zero-fill struct thread */
-    uint8_t *p = (uint8_t *)t;
-    for (uint32_t i = 0; i < sizeof(struct thread); i++) p[i] = 0;
+static void init_thread(struct thread *t, const char *name, int priority)
+{
+	/* Zero-fill struct thread */
+	uint8_t *p = (uint8_t *)t;
+	for (uint32_t i = 0; i < sizeof(struct thread); i++)
+		p[i] = 0;
 
-    t->status   = THREAD_BLOCKED;
-    t->stack    = (uint8_t *)t + PGSIZE;  /* Puncak halaman */
-    t->priority = priority;
-    t->magic    = THREAD_MAGIC;
+	t->status = THREAD_BLOCKED;
+	t->stack = (uint8_t *)t + PGSIZE; /* Puncak halaman */
+	t->priority = priority;
+	t->magic = THREAD_MAGIC;
 
-    /* Salin nama (maks 15 karakter) */
-    uint32_t i = 0;
-    while (i < 15 && name[i]) { t->name[i] = name[i]; i++; }
-    t->name[i] = '\0';
+	/* Salin nama (maks 15 karakter) */
+	uint32_t i = 0;
+	while (i < 15 && name[i]) {
+		t->name[i] = name[i];
+		i++;
+	}
+	t->name[i] = '\0';
 }
 
 /* Wrapper yang menjalankan fungsi thread, lalu membersihkan */
-static void kernel_thread(thread_func *function, void *aux) {
-    function(aux);
-    thread_exit();
+static void kernel_thread(thread_func *function, void *aux)
+{
+	function(aux);
+	thread_exit();
 }
 
 /* ── Fungsi PROVIDED (sudah jadi) ────────────────────────── */
@@ -126,11 +136,12 @@ static void kernel_thread(thread_func *function, void *aux) {
  * Kernel_main sudah berjalan di initial_thread_page (boot.asm).
  * running_thread() akan menemukan struct thread-nya dari nilai ESP.
  */
-void thread_init(void) {
-    initial_thread = running_thread();
-    init_thread(initial_thread, "main", PRI_DEFAULT);
-    initial_thread->status = THREAD_RUNNING;
-    initial_thread->tid    = allocate_tid();
+void thread_init(void)
+{
+	initial_thread = running_thread();
+	init_thread(initial_thread, "main", PRI_DEFAULT);
+	initial_thread->status = THREAD_RUNNING;
+	initial_thread->tid = allocate_tid();
 }
 
 /*
@@ -139,10 +150,11 @@ void thread_init(void) {
  * dengan membulatkan ESP ke page boundary.
  * (Ini berfungsi karena struct thread ada di BAWAH page-nya.)
  */
-struct thread *running_thread(void) {
-    uint32_t esp;
-    __asm__ volatile ("mov %%esp, %0" : "=g" (esp));
-    return (struct thread *)(void *)(esp & ~(uint32_t)(PGSIZE - 1));
+struct thread *running_thread(void)
+{
+	uint32_t esp;
+	__asm__ volatile("mov %%esp, %0" : "=g"(esp));
+	return (struct thread *)(void *)(esp & ~(uint32_t)(PGSIZE - 1));
 }
 
 /*
@@ -150,36 +162,41 @@ struct thread *running_thread(void) {
  * Sama dengan running_thread() + pemeriksaan keamanan.
  * Jika magic rusak → stack overflow terdeteksi.
  */
-struct thread *thread_current(void) {
-    struct thread *t = running_thread();
-    if (!is_thread(t)) {
-        vga_set_color(0x0C);
-        vga_puts("\nKERNEL PANIC: stack overflow atau korupsi TCB!\n");
-        while (1) __asm__ volatile ("hlt");
-    }
-    return t;
+struct thread *thread_current(void)
+{
+	struct thread *t = running_thread();
+	if (!is_thread(t)) {
+		vga_set_color(0x0C);
+		vga_puts("\nKERNEL PANIC: stack overflow atau korupsi TCB!\n");
+		while (1)
+			__asm__ volatile("hlt");
+	}
+	return t;
 }
 
 const char *thread_name(void) { return thread_current()->name; }
-tid_t       thread_tid(void)  { return thread_current()->tid;  }
+tid_t thread_tid(void) { return thread_current()->tid; }
 
 /*
  * thread_exit()
  * Hentikan thread yang sedang berjalan dan jadwalkan thread lain.
  */
-void thread_exit(void) {
-    thread_current()->status = THREAD_DYING;
-    schedule();
-    while (1) __asm__ volatile ("hlt");  /* Tidak seharusnya sampai sini */
+void thread_exit(void)
+{
+	thread_current()->status = THREAD_DYING;
+	schedule();
+	while (1)
+		__asm__ volatile("hlt"); /* Tidak seharusnya sampai sini */
 }
 
 /*
  * thread_block()
  * Blokir thread saat ini hingga di-unblock (untuk sinkronisasi Minggu 5).
  */
-void thread_block(void) {
-    thread_current()->status = THREAD_BLOCKED;
-    schedule();
+void thread_block(void)
+{
+	thread_current()->status = THREAD_BLOCKED;
+	schedule();
 }
 
 /*
@@ -187,47 +204,55 @@ void thread_block(void) {
  * Pindahkan thread t yang sedang BLOCKED ke state READY
  * dan masukkan ke antrian penjadwalan.
  */
-void thread_unblock(struct thread *t) {
-    t->status = THREAD_READY;
-    if (ready_count < MAX_THREADS * 2) {
-        ready_queue[ready_tail] = t;
-        ready_tail  = (ready_tail + 1) % (MAX_THREADS * 2);
-        ready_count++;
-    }
+void thread_unblock(struct thread *t)
+{
+	t->status = THREAD_READY;
+	if (ready_count < MAX_THREADS * 2) {
+		ready_queue[ready_tail] = t;
+		ready_tail = (ready_tail + 1) % (MAX_THREADS * 2);
+		ready_count++;
+	}
 }
 
-int  thread_get_priority(void)           { return thread_current()->priority; }
-void thread_set_priority(int new_priority){ thread_current()->priority = new_priority; }
+int thread_get_priority(void) { return thread_current()->priority; }
+void thread_set_priority(int new_priority)
+{
+	thread_current()->priority = new_priority;
+}
 
 /*
  * thread_schedule_tail()
  * Dipanggil oleh switch_entry (thread baru) dan schedule() (thread lama).
  * Tandai thread yang sekarang berjalan sebagai RUNNING.
  */
-void thread_schedule_tail(struct thread *prev) {
-    running_thread()->status = THREAD_RUNNING;
-    (void)prev;
+void thread_schedule_tail(struct thread *prev)
+{
+	running_thread()->status = THREAD_RUNNING;
+	(void)prev;
 }
 
 /*
  * schedule()
  * Fungsi internal: ambil thread berikutnya, lakukan context switch.
  */
-static void schedule(void) {
-    struct thread *cur  = running_thread();
-    struct thread *next = next_thread_to_run();
-    struct thread *prev = NULL;
+static void schedule(void)
+{
+	struct thread *cur = running_thread();
+	struct thread *next = next_thread_to_run();
+	struct thread *prev = NULL;
 
-    if (next == NULL) {
-        vga_set_color(0x0C);
-        vga_puts("\nKERNEL PANIC: next_thread_to_run() mengembalikan NULL!\n");
-        while (1) __asm__ volatile ("hlt");
-    }
+	if (next == NULL) {
+		vga_set_color(0x0C);
+		vga_puts("\nKERNEL PANIC: next_thread_to_run() mengembalikan "
+			 "NULL!\n");
+		while (1)
+			__asm__ volatile("hlt");
+	}
 
-    if (cur != next)
-        prev = switch_threads(cur, next);
+	if (cur != next)
+		prev = switch_threads(cur, next);
 
-    thread_schedule_tail(prev);
+	thread_schedule_tail(prev);
 }
 
 /* ================================================================
@@ -268,11 +293,15 @@ static void schedule(void) {
  *    thread_unblock(t);
  *    return t->tid;
  */
-tid_t thread_create(const char *name, int priority,
-                    thread_func *function, void *aux) {
-    /* ── Implementasikan di sini ─────────────────────────── */
-    (void)name; (void)priority; (void)function; (void)aux;
-    return TID_ERROR;
+tid_t thread_create(const char *name, int priority, thread_func *function,
+		    void *aux)
+{
+	/* ── Implementasikan di sini ─────────────────────────── */
+	(void)name;
+	(void)priority;
+	(void)function;
+	(void)aux;
+	return TID_ERROR;
 }
 
 /*
@@ -290,8 +319,9 @@ tid_t thread_create(const char *name, int priority,
  *   ready_count++;
  *   schedule();
  */
-void thread_yield(void) {
-    /* ── Implementasikan di sini ─────────────────────────── */
+void thread_yield(void)
+{
+	/* ── Implementasikan di sini ─────────────────────────── */
 }
 
 /*
@@ -314,7 +344,8 @@ void thread_yield(void) {
  *   Cari thread dengan priority tertinggi dari antrian,
  *   keluarkan dari antrian, dan kembalikan.
  */
-struct thread *next_thread_to_run(void) {
-    /* ── Implementasikan di sini ─────────────────────────── */
-    return initial_thread;   /* Stub: selalu kembalikan initial thread */
+struct thread *next_thread_to_run(void)
+{
+	/* ── Implementasikan di sini ─────────────────────────── */
+	return initial_thread; /* Stub: selalu kembalikan initial thread */
 }

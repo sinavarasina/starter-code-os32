@@ -15,12 +15,12 @@
 #include "types.h"
 
 /* Jumlah thread maksimum yang bisa dibuat */
-#define MAX_THREADS  8
+#define MAX_THREADS 8
 
 /* Nilai prioritas thread */
-#define PRI_MIN      0    /* Prioritas terendah */
-#define PRI_DEFAULT  31   /* Prioritas default */
-#define PRI_MAX      63   /* Prioritas tertinggi */
+#define PRI_MIN 0      /* Prioritas terendah */
+#define PRI_DEFAULT 31 /* Prioritas default */
+#define PRI_MAX 63     /* Prioritas tertinggi */
 
 /* Magic number untuk deteksi stack overflow.
  * Jika thread->magic berubah dari nilai ini, stack sudah overflow! */
@@ -28,10 +28,25 @@
 
 /* Status thread selama siklus hidupnya */
 enum thread_status {
-    THREAD_RUNNING,   /* Sedang berjalan di CPU */
-    THREAD_READY,     /* Siap jalan, menunggu giliran */
-    THREAD_BLOCKED,   /* Menunggu event (sinkronisasi) */
-    THREAD_DYING,     /* Akan segera dihentikan */
+	THREAD_RUNNING, /* Sedang berjalan di CPU */
+	THREAD_READY,	/* Siap jalan, menunggu giliran */
+	THREAD_BLOCKED, /* Menunggu event (sinkronisasi) */
+	THREAD_DYING,	/* Akan segera dihentikan */
+};
+
+/* ================================================================
+ *  Struct argumen thread generic
+ *
+ *  Dipakai oleh thread_func_generic() agar satu fungsi bisa
+ *  digunakan oleh semua thread — nama diambil dari thread_name().
+ *
+ *  Fields:
+ *    color     : warna teks VGA (lihat konstanta di vga.h)
+ *    max_ticks : jumlah tick sebelum thread exit (0 = infinite)
+ * ================================================================ */
+struct thread_args {
+	uint8_t color;
+	uint32_t max_ticks;
 };
 
 /*
@@ -56,12 +71,12 @@ enum thread_status {
  *   current = (struct thread *)(esp & ~(PGSIZE - 1))
  */
 struct thread {
-    tid_t              tid;       /* Nomor unik thread */
-    enum thread_status status;    /* Status saat ini */
-    char               name[16];  /* Nama thread (untuk debug) */
-    uint8_t           *stack;     /* Saved ESP (diperbarui saat context switch) */
-    int                priority;  /* Prioritas (Minggu 6: priority scheduling) */
-    unsigned           magic;     /* Harus == THREAD_MAGIC; deteksi overflow */
+	tid_t tid;		   /* Nomor unik thread */
+	enum thread_status status; /* Status saat ini */
+	char name[16];		   /* Nama thread (untuk debug) */
+	uint8_t *stack; /* Saved ESP (diperbarui saat context switch) */
+	int priority;	/* Prioritas (Minggu 6: priority scheduling) */
+	unsigned magic; /* Harus == THREAD_MAGIC; deteksi overflow */
 };
 
 /* Tipe fungsi yang dijalankan thread */
@@ -80,7 +95,7 @@ struct thread *running_thread(void);
 
 /* Nama dan TID thread yang sedang berjalan */
 const char *thread_name(void);
-tid_t       thread_tid(void);
+tid_t thread_tid(void);
 
 /* Hentikan thread saat ini, beralih ke thread lain */
 void thread_exit(void);
@@ -92,7 +107,7 @@ void thread_block(void);
 void thread_unblock(struct thread *t);
 
 /* Getter/setter prioritas */
-int  thread_get_priority(void);
+int thread_get_priority(void);
 void thread_set_priority(int new_priority);
 
 /* Dipanggil setelah context switch selesai */
@@ -133,9 +148,9 @@ void thread_schedule_tail(struct thread *prev);
  * Minggu 6: modifikasi untuk Priority Scheduling
  * ================================================================
  */
-tid_t          thread_create(const char *name, int priority,
-                             thread_func *function, void *aux);
-void           thread_yield(void);
+tid_t thread_create(const char *name, int priority, thread_func *function,
+		    void *aux);
+void thread_yield(void);
 struct thread *next_thread_to_run(void);
 
 /* ================================================================

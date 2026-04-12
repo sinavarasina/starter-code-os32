@@ -22,9 +22,9 @@
  *   sema_up()   : V() — tambah value, bangunkan waiter jika ada
  */
 struct semaphore {
-    unsigned      value;                    /* Nilai saat ini (>= 0) */
-    struct thread *waiters[MAX_THREADS];    /* Thread yang sedang menunggu */
-    uint32_t      waiter_count;             /* Jumlah waiter */
+	unsigned value;			     /* Nilai saat ini (>= 0) */
+	struct thread *waiters[MAX_THREADS]; /* Thread yang sedang menunggu */
+	uint32_t waiter_count;		     /* Jumlah waiter */
 };
 
 void sema_init(struct semaphore *, unsigned value);
@@ -33,8 +33,8 @@ void sema_init(struct semaphore *, unsigned value);
  * TUGAS MAHASISWA MINGGU 5:
  *   sema_down() dan sema_up()
  */
-void sema_down(struct semaphore *);   /* P() — block jika value == 0 */
-void sema_up(struct semaphore *);     /* V() — wake waiter, tambah value */
+void sema_down(struct semaphore *); /* P() — block jika value == 0 */
+void sema_up(struct semaphore *);   /* V() — wake waiter, tambah value */
 
 /* ── Lock (Mutex) ────────────────────────────────────────── */
 
@@ -43,8 +43,8 @@ void sema_up(struct semaphore *);     /* V() — wake waiter, tambah value */
  * Diimplementasikan di atas semaphore dengan value awal 1.
  */
 struct lock {
-    struct thread    *holder;     /* Thread yang memegang lock (atau NULL) */
-    struct semaphore  semaphore;  /* Binary semaphore (value 0 atau 1) */
+	struct thread *holder;	    /* Thread yang memegang lock (atau NULL) */
+	struct semaphore semaphore; /* Binary semaphore (value 0 atau 1) */
 };
 
 void lock_init(struct lock *);
@@ -57,7 +57,7 @@ void lock_acquire(struct lock *);
 void lock_release(struct lock *);
 
 /* Kembalikan 1 jika thread saat ini memegang lock, 0 jika tidak */
-int  lock_held_by_current_thread(const struct lock *);
+int lock_held_by_current_thread(const struct lock *);
 
 /* ── Condition Variable ──────────────────────────────────── */
 
@@ -66,8 +66,8 @@ int  lock_held_by_current_thread(const struct lock *);
  * Selalu digunakan bersama lock (monitor pattern).
  */
 struct condition {
-    struct semaphore *waiters[MAX_THREADS]; /* Semaphore per waiter */
-    uint32_t          waiter_count;
+	struct semaphore *waiters[MAX_THREADS]; /* Semaphore per waiter */
+	uint32_t waiter_count;
 };
 
 void cond_init(struct condition *);

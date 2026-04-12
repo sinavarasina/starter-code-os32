@@ -13,6 +13,12 @@
 
 ASM := nasm
 
+# ── Flag demo (kosong = Minggu 4 Round-Robin) ────────────────
+# Contoh penggunaan:
+#   make DEMO=-DSYNCHRONIZATION
+#   make DEMO=-DPRIORITY_SCHEDULING
+DEMO ?=
+
 # ── Deteksi arsitektur host ──────────────────────────────────
 # Di dalam Docker: IFOS_ARCH di-set oleh Dockerfile.
 # Di luar Docker (Ubuntu native): pakai uname -m.
@@ -22,12 +28,12 @@ ifeq ($(ARCH),arm64)
     CC := i686-linux-gnu-gcc
     LD := i686-linux-gnu-ld
     CFLAGS := -ffreestanding -fno-stack-protector -nostdlib -nostdinc \
-              -fno-builtin -fno-pic -Wall -Wextra -std=c99 -O0 -Isrc
+              -fno-builtin -fno-pic -Wall -Wextra -std=c99 -O0 -Isrc $(DEMO)
 else
     CC := gcc
     LD := ld
     CFLAGS := -m32 -ffreestanding -fno-stack-protector -nostdlib -nostdinc \
-              -fno-builtin -fno-pic -Wall -Wextra -std=c99 -O0 -Isrc
+              -fno-builtin -fno-pic -Wall -Wextra -std=c99 -O0 -Isrc $(DEMO)
 endif
 
 ASMFLAGS := -f elf32
@@ -47,7 +53,7 @@ OBJS := $(BUILD_DIR)/boot.o     \
 KERNEL := $(BUILD_DIR)/kernel.elf
 ISO    := $(BUILD_DIR)/os.iso
 
-.PHONY: all run clean
+.PHONY: all run clean format
 
 all: $(ISO)
 
@@ -84,3 +90,8 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(ISO_DIR)/boot/kernel.elf
 	@echo ">>> Build directory dihapus."
+
+format:
+	@echo ">>> Memformat source code..."
+	clang-format -i -style=file src/*.c src/*.h
+	@echo ">>> Selesai!"

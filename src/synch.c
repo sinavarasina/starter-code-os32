@@ -15,9 +15,10 @@
 /*
  * sema_init() — Sudah disediakan, JANGAN diubah.
  */
-void sema_init(struct semaphore *sema, unsigned value) {
-    sema->value        = value;
-    sema->waiter_count = 0;
+void sema_init(struct semaphore *sema, unsigned value)
+{
+	sema->value = value;
+	sema->waiter_count = 0;
 }
 
 /*
@@ -34,9 +35,10 @@ void sema_init(struct semaphore *sema, unsigned value) {
  *   }
  *   sema->value--;
  */
-void sema_down(struct semaphore *sema) {
-    /* ── Implementasikan di sini ─────────────────────────── */
-    (void)sema;
+void sema_down(struct semaphore *sema)
+{
+	/* ── Implementasikan di sini ─────────────────────────── */
+	(void)sema;
 }
 
 /*
@@ -56,9 +58,10 @@ void sema_down(struct semaphore *sema) {
  *       thread_unblock(t);
  *   }
  */
-void sema_up(struct semaphore *sema) {
-    /* ── Implementasikan di sini ─────────────────────────── */
-    (void)sema;
+void sema_up(struct semaphore *sema)
+{
+	/* ── Implementasikan di sini ─────────────────────────── */
+	(void)sema;
 }
 
 /* ── Lock ────────────────────────────────────────────────── */
@@ -66,9 +69,10 @@ void sema_up(struct semaphore *sema) {
 /*
  * lock_init() — Sudah disediakan, JANGAN diubah.
  */
-void lock_init(struct lock *lock) {
-    lock->holder = NULL;
-    sema_init(&lock->semaphore, 1);  /* Binary semaphore: value 1 = bebas */
+void lock_init(struct lock *lock)
+{
+	lock->holder = NULL;
+	sema_init(&lock->semaphore, 1); /* Binary semaphore: value 1 = bebas */
 }
 
 /*
@@ -80,9 +84,10 @@ void lock_init(struct lock *lock) {
  *   sema_down(&lock->semaphore);
  *   lock->holder = thread_current();
  */
-void lock_acquire(struct lock *lock) {
-    /* ── Implementasikan di sini ─────────────────────────── */
-    (void)lock;
+void lock_acquire(struct lock *lock)
+{
+	/* ── Implementasikan di sini ─────────────────────────── */
+	(void)lock;
 }
 
 /*
@@ -95,16 +100,18 @@ void lock_acquire(struct lock *lock) {
  *   lock->holder = NULL;
  *   sema_up(&lock->semaphore);
  */
-void lock_release(struct lock *lock) {
-    /* ── Implementasikan di sini ─────────────────────────── */
-    (void)lock;
+void lock_release(struct lock *lock)
+{
+	/* ── Implementasikan di sini ─────────────────────────── */
+	(void)lock;
 }
 
 /*
  * lock_held_by_current_thread() — Sudah disediakan, JANGAN diubah.
  */
-int lock_held_by_current_thread(const struct lock *lock) {
-    return lock->holder == thread_current();
+int lock_held_by_current_thread(const struct lock *lock)
+{
+	return lock->holder == thread_current();
 }
 
 /* ── Condition Variable ──────────────────────────────────── */
@@ -112,9 +119,7 @@ int lock_held_by_current_thread(const struct lock *lock) {
 /*
  * cond_init() — Sudah disediakan, JANGAN diubah.
  */
-void cond_init(struct condition *cond) {
-    cond->waiter_count = 0;
-}
+void cond_init(struct condition *cond) { cond->waiter_count = 0; }
 
 /*
  * cond_wait() — BONUS Minggu 5
@@ -130,9 +135,11 @@ void cond_init(struct condition *cond) {
  *   sema_down(&waiter_sema);  // tidur sampai di-signal
  *   lock_acquire(lock);
  */
-void cond_wait(struct condition *cond, struct lock *lock) {
-    /* ── Implementasikan di sini (BONUS) ────────────────── */
-    (void)cond; (void)lock;
+void cond_wait(struct condition *cond, struct lock *lock)
+{
+	/* ── Implementasikan di sini (BONUS) ────────────────── */
+	(void)cond;
+	(void)lock;
 }
 
 /*
@@ -147,9 +154,11 @@ void cond_wait(struct condition *cond, struct lock *lock) {
  *       cond->waiter_count--;
  *   }
  */
-void cond_signal(struct condition *cond, struct lock *lock) {
-    /* ── Implementasikan di sini (BONUS) ────────────────── */
-    (void)cond; (void)lock;
+void cond_signal(struct condition *cond, struct lock *lock)
+{
+	/* ── Implementasikan di sini (BONUS) ────────────────── */
+	(void)cond;
+	(void)lock;
 }
 
 /*
@@ -161,7 +170,9 @@ void cond_signal(struct condition *cond, struct lock *lock) {
  *   while (cond->waiter_count > 0)
  *       cond_signal(cond, lock);
  */
-void cond_broadcast(struct condition *cond, struct lock *lock) {
-    /* ── Implementasikan di sini (BONUS) ────────────────── */
-    (void)cond; (void)lock;
+void cond_broadcast(struct condition *cond, struct lock *lock)
+{
+	/* ── Implementasikan di sini (BONUS) ────────────────── */
+	(void)cond;
+	(void)lock;
 }
