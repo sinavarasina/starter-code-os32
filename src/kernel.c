@@ -15,15 +15,30 @@
  *   [Thread-A] tick 1
  *   ...
  *
- * ── Minggu 5: Sinkronisasi ───────────────────────────────
- * Producer-consumer dengan semaphore dan lock.
+ * ── Minggu 5 Sesi 1: Analisis Race Condition ─────────────
+ * Producer-Consumer TANPA sinkronisasi. Amati output yang kacau.
  * Aktifkan dengan:
  *   make DEMO=-DSYNCHRONIZATION
  *
- * Jika sema_down/sema_up belum diimplementasikan:
- *   → layar freeze, Producer terus jalan tanpa Consumer
- * Jika sudah benar:
- *   → Producer dan Consumer bergantian rapi
+ * Output yang diharapkan (RUSAK karena race condition):
+ *   [Producer] menulis item 0
+ *   [Consumer] membaca item        ← terpotong! Producer menyela
+ *   [Producer] menulis item 1
+ *   2                              ← angka salah / terlambat tercetak
+ *   ...
+ *
+ * ── Minggu 5 Sesi 2: Implementasi Mutex/Lock ─────────────
+ * Mahasiswa mengimplementasikan sema_down/sema_up/lock di synch.c,
+ * lalu uncomment blok TODO di producer() dan consumer() di bawah.
+ * Tetap gunakan:
+ *   make DEMO=-DSYNCHRONIZATION
+ *
+ * Output yang diharapkan (BENAR setelah fix):
+ *   [Producer] menulis item 0
+ *   [Consumer] membaca item 0
+ *   [Producer] menulis item 1
+ *   [Consumer] membaca item 1
+ *   ...
  *
  * ── Minggu 6: Priority Scheduling ───────────────────────
  * Thread dengan prioritas berbeda. Thread prioritas tinggi
@@ -82,11 +97,20 @@ static struct thread_args args_b = {VGA_COLOR_BRIGHT_CYAN, 0};
 static struct thread_args args_c = {VGA_COLOR_YELLOW, 0};
 static struct thread_args args_low = {VGA_COLOR_DARK_GRAY, 0};
 static struct thread_args args_med = {VGA_COLOR_BRIGHT_CYAN, 0};
-static struct thread_args args_high = {VGA_COLOR_BRIGHT_WHITE,
-				       5}; /* exit setelah 5 tick */
+static struct thread_args args_high = {VGA_COLOR_BRIGHT_WHITE, 5};
 
 /* ================================================================
  *  Demo Minggu 5: Producer-Consumer
+ *
+ *  SESI 1 — Modul 9 (Analisis Race Condition):
+ *    Jalankan apa adanya. Amati output yang kacau.
+ *    Blok TODO di bawah masih di-comment → TIDAK ada sinkronisasi.
+ *
+ *  SESI 2 — Modul 10 (Implementasi Mutex/Lock):
+ *    1. Implementasikan sema_down, sema_up, lock_acquire, lock_release
+ *       di dalam synch.c.
+ *    2. Uncomment keempat blok TODO di producer() dan consumer().
+ *    3. Jalankan ulang → output harus rapi dan berurutan.
  * ================================================================ */
 #ifdef SYNCHRONIZATION
 #include "synch.h"
@@ -96,40 +120,95 @@ static struct semaphore sema_full;
 static struct lock buf_lock;
 static int shared_buffer = -1;
 
+/* ── Producer ────────────────────────────────────────────────── */
 static void producer(void *aux)
 {
 	(void)aux;
 	int item = 0;
+
 	while (1) {
-		sema_down(&sema_empty);
-		lock_acquire(&buf_lock);
+		/* ======================================================
+		 * TODO MODUL 10 — Uncomment baris berikut setelah
+		 * mengimplementasikan sema_down() di synch.c:
+		 *
+		 * sema_down(&sema_empty);   <- tunggu slot kosong
+		 * lock_acquire(&buf_lock);  <- kunci buffer
+		 * ====================================================== */
 
+		/* ── CRITICAL SECTION ─────────────────────────────── */
+
+		/* Tulis ke buffer */
 		shared_buffer = item;
-		vga_set_color(VGA_COLOR_BRIGHT_GREEN);
-		vga_puts("[Producer] kirim item ");
-		vga_putint(item++);
-		vga_putchar('\n');
 
-		lock_release(&buf_lock);
-		sema_up(&sema_full);
+		/*
+		 * JEBAKAN RACE CONDITION:
+		 * thread_yield() di sini mensimulasikan preemption
+		 * di tengah critical section — Consumer bisa masuk
+		 * sebelum Producer selesai mencetak log!
+		 */
+		thread_yield();
+
+		vga_set_color(VGA_COLOR_BRIGHT_GREEN);
+		vga_puts("[Producer] menulis item ");
+		vga_putint(item);
+		vga_putchar('\n');
+		item++;
+
+		/* ── END CRITICAL SECTION ─────────────────────────── */
+
+		/* ======================================================
+		 * TODO MODUL 10 — Uncomment baris berikut setelah
+		 * mengimplementasikan lock_release() dan sema_up():
+		 *
+		 * lock_release(&buf_lock);  <- lepas kunci buffer
+		 * sema_up(&sema_full);      <- beri tahu Consumer ada item
+		 * ====================================================== */
+
 		thread_yield();
 	}
 }
 
+/* ── Consumer ────────────────────────────────────────────────── */
 static void consumer(void *aux)
 {
 	(void)aux;
+
 	while (1) {
-		sema_down(&sema_full);
-		lock_acquire(&buf_lock);
+		/* ======================================================
+		 * TODO MODUL 10 — Uncomment baris berikut setelah
+		 * mengimplementasikan sema_down() di synch.c:
+		 *
+		 * sema_down(&sema_full);    <- tunggu sampai ada item
+		 * lock_acquire(&buf_lock);  <- kunci buffer
+		 * ====================================================== */
+
+		/* ── CRITICAL SECTION ─────────────────────────────── */
 
 		vga_set_color(VGA_COLOR_YELLOW);
-		vga_puts("[Consumer] terima item ");
+		vga_puts("[Consumer] membaca item ");
+
+		/*
+		 * JEBAKAN RACE CONDITION:
+		 * thread_yield() di sini mensimulasikan preemption
+		 * di tengah mencetak log — Producer bisa menulis nilai
+		 * baru ke shared_buffer sebelum Consumer sempat
+		 * mencetak angkanya!
+		 */
+		thread_yield();
+
 		vga_putint(shared_buffer);
 		vga_putchar('\n');
 
-		lock_release(&buf_lock);
-		sema_up(&sema_empty);
+		/* ── END CRITICAL SECTION ─────────────────────────── */
+
+		/* ======================================================
+		 * TODO MODUL 10 — Uncomment baris berikut setelah
+		 * mengimplementasikan lock_release() dan sema_up():
+		 *
+		 * lock_release(&buf_lock);  <- lepas kunci buffer
+		 * sema_up(&sema_empty);     <- beri tahu Producer slot kosong
+		 * ====================================================== */
+
 		thread_yield();
 	}
 }
@@ -154,13 +233,15 @@ void kernel_main(uint32_t magic, uint32_t mb_info)
 	vga_puts("Inisialisasi sistem thread...\n");
 	thread_init();
 
-/* ── Minggu 5: Sinkronisasi ──────────────────────────────── */
+/* ── Minggu 5: Sinkronisasi (Sesi 1 & 2) ────────────────── */
 #ifdef SYNCHRONIZATION
 
-	vga_puts("Demo Minggu 5: Sinkronisasi (Producer-Consumer)\n");
+	vga_puts("Demo Minggu 5: Producer-Consumer\n");
 	vga_set_color(VGA_COLOR_DARK_GRAY);
-	vga_puts("(Jika layar freeze, sema_down/sema_up belum "
-		 "diimplementasikan)\n\n");
+	vga_puts("Modul 9 : Amati race condition pada output di bawah.\n");
+	vga_puts("Modul 10: Uncomment blok TODO, implementasikan synch.c,\n");
+	vga_puts(
+	    "          lalu jalankan ulang untuk melihat output rapi.\n\n");
 	vga_set_color(VGA_COLOR_WHITE);
 
 	sema_init(&sema_empty, 1);
@@ -177,13 +258,10 @@ void kernel_main(uint32_t magic, uint32_t mb_info)
 	vga_set_color(VGA_COLOR_DARK_GRAY);
 	vga_puts("(Jika masih Round-Robin, next_thread_to_run() belum "
 		 "dimodifikasi)\n");
-	vga_puts(
-	    "(High=50 jalan 5 tick lalu exit, Med=31 mengambil alih, Low=10 "
-	    "terakhir)\n\n");
+	vga_puts("(High=50 jalan 5 tick lalu exit, Med=31 mengambil alih, "
+		 "Low=10 terakhir)\n\n");
 	vga_set_color(VGA_COLOR_WHITE);
 
-	/* Dibuat urutan Low → Med → High (bukan urutan prioritas)
-	 * agar efek priority scheduling terlihat jelas */
 	thread_create("Low", 10, thread_func_generic, &args_low);
 	thread_create("Med", PRI_DEFAULT, thread_func_generic, &args_med);
 	thread_create("High", 50, thread_func_generic, &args_high);
